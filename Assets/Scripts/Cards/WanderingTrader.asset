@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d66fe97f7ce1d9468f081f5092e903a, type: 3}
+  m_Name: WanderingTrader
+  m_EditorClassIdentifier: 
+  cardID: 0
+  cardName: Wandering trader
+  sprite: 4
+  dialogue: A shady figure waves you over, offering supplies in exchange for medicine
+  leftQuote: Trade medicine for resources
+  rightQuote: Refuse and move on
+  characterName: Wandering Trader
+  leftFood: 20
+  leftWater: 0
+  leftAmmo: 10
+  leftMorale: 0
+  leftMedicine: -30
+  rightFood: 0
+  rightWater: 0
+  rightAmmo: 0
+  rightMorale: 0
+  rightMedicine: 0
