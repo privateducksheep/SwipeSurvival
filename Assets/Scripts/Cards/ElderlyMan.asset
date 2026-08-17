@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d66fe97f7ce1d9468f081f5092e903a, type: 3}
+  m_Name: ElderlyMan
+  m_EditorClassIdentifier: 
+  cardID: 0
+  cardName: Elderly Bunker Man
+  sprite: 27
+  dialogue: elderly man asks to join group. he has nothing on him and looks weak.
+  leftQuote: accept him into your group
+  rightQuote: every man for himself
+  characterName: Elderly Man
+  leftFood: -10
+  leftWater: -10
+  leftAmmo: 0
+  leftMorale: 0
+  leftMedicine: 0
+  rightFood: 0
+  rightWater: 0
+  rightAmmo: 0
+  rightMorale: 0
+  rightMedicine: 0
+  hasBeenShown: 1
+  appearsOnceOnly: 1
+  requiresTrader: 0
+  requiresElderlyBunkerMan: 0
+  requiresGoToBunker: 0
+  requiresEnteredBunker: 0
+  requiresFoughtBunkerZombies: 0
+  requiresContinueExploringBunker: 0

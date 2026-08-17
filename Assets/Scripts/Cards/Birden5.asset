@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d66fe97f7ce1d9468f081f5092e903a, type: 3}
+  m_Name: Birden5
+  m_EditorClassIdentifier: 
+  cardID: 0
+  cardName: Generic Man Action
+  sprite: 29
+  dialogue: On your way to the shed, you run into a zombie horde
+  leftQuote: Fight
+  rightQuote: Fight
+  characterName: Zombie Horde
+  leftFood: 0
+  leftWater: 0
+  leftAmmo: -40
+  leftMorale: -30
+  leftMedicine: -30
+  rightFood: 0
+  rightWater: 0
+  rightAmmo: -40
+  rightMorale: -30
+  rightMedicine: -30
+  hasBeenShown: 0
+  appearsOnceOnly: 1
+  requiresElderlyBunkerMan: 0
+  requiresMap: 0
+  requiresCorpse: 0
+  requiresBitemark: 0
+  requiresBitemarkBeg: 0
+  requiresBirden: 1

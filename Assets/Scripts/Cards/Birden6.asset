@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d66fe97f7ce1d9468f081f5092e903a, type: 3}
+  m_Name: Birden6
+  m_EditorClassIdentifier: 
+  cardID: 0
+  cardName: Angry man
+  sprite: 38
+  dialogue: You make it to the child in the shed. Thankfully, he is still alive
+  leftQuote: Take him in
+  rightQuote: Leave him there
+  characterName: Birdenchild
+  leftFood: 0
+  leftWater: 0
+  leftAmmo: 0
+  leftMorale: 100
+  leftMedicine: 0
+  rightFood: 0
+  rightWater: 0
+  rightAmmo: 0
+  rightMorale: -100
+  rightMedicine: 0
+  hasBeenShown: 0
+  appearsOnceOnly: 1
+  requiresElderlyBunkerMan: 0
+  requiresMap: 0
+  requiresCorpse: 0
+  requiresBitemark: 0
+  requiresBitemarkBeg: 0
+  requiresBirden: 1

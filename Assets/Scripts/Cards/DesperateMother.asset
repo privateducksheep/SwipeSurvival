@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d66fe97f7ce1d9468f081f5092e903a, type: 3}
+  m_Name: DesperateMother
+  m_EditorClassIdentifier: 
+  cardID: 0
+  cardName: 
+  sprite: 9
+  dialogue: A woman begs for food for her child. She offers nothing in return.
+  leftQuote: Share some food
+  rightQuote: Turn her away
+  characterName: Desperate Mother
+  leftFood: -15
+  leftWater: 0
+  leftAmmo: 0
+  leftMorale: 10
+  leftMedicine: 0
+  rightFood: 0
+  rightWater: 0
+  rightAmmo: 0
+  rightMorale: -20
+  rightMedicine: 0
