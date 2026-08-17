@@ -42,12 +42,15 @@ public class GameManager : MonoBehaviour
     public int cardSwipeCount = 0;
     public int daysSurvived = 0;
     public TMP_Text daysSurvivedText;
+    private int lastScreenWidth;
+    private int lastScreenHeight;
     //Audio
     public AudioSource audioSource;
     public AudioClip flip;
 
     void Start()
     {
+        UpdateResponsiveLayout();
         resourceManager.ResetAllCards();
         resourceManager.food = 50;
         resourceManager.water = 50;
@@ -77,6 +80,11 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
+        if (Screen.width != lastScreenWidth || Screen.height != lastScreenHeight)
+        {
+            UpdateResponsiveLayout();
+        }
+
         //Dialogue text handling
         textColor.a = Mathf.Min((Mathf.Abs(cardGameObject.transform.position.x) - fSideMargin) / divideValue, 1);
         if (cardGameObject.transform.position.x > fSideTrigger)
@@ -429,6 +437,40 @@ public class GameManager : MonoBehaviour
         {
             daysSurvivedText.text = "Days Survived : " + daysSurvived.ToString();
         }
+    }
+
+    /// <summary>
+    /// Keeps the world-space day counter inside the camera on every aspect ratio.
+    /// The rest of the HUD is handled by the Canvas Scaler, but this label is a
+    /// TextMeshPro object attached to the gameplay hierarchy rather than Canvas UI.
+    /// </summary>
+    void UpdateResponsiveLayout()
+    {
+        lastScreenWidth = Screen.width;
+        lastScreenHeight = Screen.height;
+
+        if (daysSurvivedText == null)
+            return;
+
+        Camera gameplayCamera = Camera.main;
+        if (gameplayCamera == null || !gameplayCamera.orthographic)
+            return;
+
+        RectTransform dayCounter = daysSurvivedText.rectTransform;
+        dayCounter.pivot = new Vector2(0f, 1f);
+
+        float distanceFromCamera = Mathf.Abs(
+            gameplayCamera.transform.position.z - dayCounter.position.z
+        );
+        Vector3 safeTopLeft = gameplayCamera.ViewportToWorldPoint(
+            new Vector3(0.025f, 0.95f, distanceFromCamera)
+        );
+
+        dayCounter.position = new Vector3(
+            safeTopLeft.x,
+            safeTopLeft.y,
+            dayCounter.position.z
+        );
     }
 
 
