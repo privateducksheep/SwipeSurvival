@@ -58,10 +58,6 @@ public class GameManager : MonoBehaviour
         resourceManager.morale = 50;
         resourceManager.medicine = 50;
         resourceManager.UpdateUI();
-        GameStats.highScore = PlayerPrefs.GetInt("HighScore", 0);
-
-
-
         LoadCard(testCard);
     }
 
@@ -421,14 +417,8 @@ public class GameManager : MonoBehaviour
     public void DeathSwipe()
     {
         GameStats.daysSurvived = daysSurvived;
+        GameStats.RecordHighScore(daysSurvived);
         SceneManager.LoadSceneAsync("DeathScene");
-
-        if (GameStats.daysSurvived > GameStats.highScore)
-        {
-            GameStats.highScore = GameStats.daysSurvived;
-            PlayerPrefs.SetInt("HighScore", GameStats.highScore);
-            PlayerPrefs.Save();
-        }
     }
 
     void UpdateDaysSurvivedUI()
