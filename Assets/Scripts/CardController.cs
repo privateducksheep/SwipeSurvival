@@ -4,21 +4,21 @@ public class CardController : MonoBehaviour
 {
     public Card card;
     public BoxCollider2D thisCard;
-    public bool isMouseOver;
 
-    private void Start()
+    private void Awake()
     {
         thisCard = gameObject.GetComponent<BoxCollider2D>();
     }
-    private void OnMouseOver()
+
+    /// <summary>
+    /// True if a world point is on the card. Syncs physics first, so it is
+    /// correct even on the frame the card was moved.
+    /// </summary>
+    public bool Contains(Vector2 worldPoint)
     {
-        isMouseOver = true;
+        Physics2D.SyncTransforms();
+        return thisCard.OverlapPoint(worldPoint);
     }
-    private void OnMouseExit()
-    {
-        isMouseOver = false;
-    }
-    
 }
 
 public enum CardSprite
