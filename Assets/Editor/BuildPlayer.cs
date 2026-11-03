@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using UnityEditor;
+using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 
 public static class BuildPlayer
@@ -44,13 +45,16 @@ public static class BuildPlayer
 
     /// <summary>
     /// Development build that screenshots every scene at many window sizes.
-    /// It uses its own product name so it never touches the real game's saved
-    /// window size, volume or high score. See Assets/Scripts/Dev/LayoutCapture.cs.
+    /// Saved settings on macOS are keyed by the app identifier, so it gets its own
+    /// identifier (and name) and never touches the real game's saved window size,
+    /// volume or high score. See Assets/Scripts/Dev/LayoutCapture.cs.
     /// </summary>
     public static void BuildMacOSLayoutCapture()
     {
         string productName = PlayerSettings.productName;
+        string identifier = PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Standalone);
         PlayerSettings.productName = productName + " Layout Capture";
+        PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Standalone, identifier + ".layoutcapture");
         try
         {
             Build(
@@ -63,6 +67,7 @@ public static class BuildPlayer
         finally
         {
             PlayerSettings.productName = productName;
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Standalone, identifier);
         }
     }
 

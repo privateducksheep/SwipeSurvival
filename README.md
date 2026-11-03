@@ -61,9 +61,22 @@ The game adapts to any window or screen shape: resizable desktop windows, ultraw
 
 The page uses the `Responsive` template in `Assets/WebGLTemplates`, so the game fills the whole browser window, follows window resizes and phone rotation, and blocks page scrolling while you swipe. Decompression fallback is on, so it works on hosts that do not send compression headers. The Exit button is hidden in browsers and on phones because they cannot quit a game.
 
+### Publishing on itch.io
+
+1. Build for the web (above), then zip the contents of `Builds/Web` so `index.html` sits at the top of the zip:
+
+   ```sh
+   cd Builds/Web && zip -r -X ../SwipeSurvival-web.zip index.html Build TemplateData
+   ```
+
+2. On itch.io choose **Create new project**, set **Kind of project** to **HTML**, upload the zip and tick **This file will be played in the browser**.
+3. Under **Embed options**, set the viewport to **960 x 600** (any size works; the game adapts to it), tick **Mobile friendly** (orientation: Default) and **Fullscreen button**, and leave **SharedArrayBuffer support** off.
+
+Browsers keep the high score and volume for each upload, so players may start with a fresh high score after you upload a new build.
+
 ## Checking layouts (developers)
 
-`BuildPlayer.BuildMacOSLayoutCapture` makes a separate development build that screenshots every scene at many window sizes. It uses its own product name, so it never touches your saved settings or high score:
+`BuildPlayer.BuildMacOSLayoutCapture` makes a separate development build that screenshots every scene at many window sizes. It uses its own app identifier, so it never touches the real game's saved settings or high score:
 
 ```sh
 "Builds/LayoutCapture/Swipe Survival Layout Capture.app/Contents/MacOS/SwipeSurvival Layout Capture" -captureDir ~/Desktop/layouts

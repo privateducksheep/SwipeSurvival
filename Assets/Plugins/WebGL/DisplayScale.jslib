@@ -1,10 +1,12 @@
 mergeInto(LibraryManager.library, {
-  // How many canvas pixels make up one CSS pixel, so the UI can stay readable on phones.
-  SwipeSurvival_CanvasPixelsPerCssPixel: function () {
-    var canvas = Module.canvas;
+  // Width of the game canvas on the page in CSS pixels, so the game can work out
+  // the screen's pixel density and keep the UI readable on phones. (The canvas's
+  // own width attribute can still be the browser default while the game starts.)
+  SwipeSurvival_CanvasCssWidth: function () {
+    var canvas = Module["canvas"];
     if (canvas && canvas.clientWidth > 0) {
-      return canvas.width / canvas.clientWidth;
+      return canvas.clientWidth;
     }
-    return window.devicePixelRatio || 1;
+    return window.innerWidth || 0;
   }
 });
