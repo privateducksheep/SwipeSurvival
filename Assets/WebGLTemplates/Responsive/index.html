@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1b1b1b">
+    <title>{{{ PRODUCT_NAME }}}</title>
+    <link rel="stylesheet" href="TemplateData/style.css">
+  </head>
+  <body>
+    <!-- The game fills the whole browser window at any size; the game itself adapts its layout. -->
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <div id="unity-loading">
+      <div id="unity-loading-title">{{{ PRODUCT_NAME }}}</div>
+      <div id="unity-progress"><div id="unity-progress-fill"></div></div>
+    </div>
+    <div id="unity-error" hidden></div>
+    <script>
+      var canvas = document.getElementById("unity-canvas");
+      var loading = document.getElementById("unity-loading");
+      var progressFill = document.getElementById("unity-progress-fill");
+      var errorBox = document.getElementById("unity-error");
+
+      var buildUrl = "Build";
+      var config = {
+        dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+        frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+        codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+#if MEMORY_FILENAME
+        memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+        symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+#endif
+        streamingAssetsUrl: "StreamingAssets",
+        companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+        productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+        productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+        // Keep the render size in step with the canvas whenever the window resizes or rotates
+        matchWebGLToCanvasSize: true,
+        // Sharp on high-density screens, but capped so phones keep a smooth frame rate
+        devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+      };
+
+      var script = document.createElement("script");
+      script.src = buildUrl + "/{{{ LOADER_FILENAME }}}";
+      script.onload = function () {
+        createUnityInstance(canvas, config, function (progress) {
+          progressFill.style.width = 100 * progress + "%";
+        }).then(function () {
+          loading.hidden = true;
+          canvas.focus();
+        }).catch(function (message) {
+          loading.hidden = true;
+          errorBox.textContent = message;
+          errorBox.hidden = false;
+        });
+      };
+      document.body.appendChild(script);
+    </script>
+  </body>
+</html>

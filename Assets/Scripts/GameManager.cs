@@ -1,10 +1,7 @@
-using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using static Unity.Collections.AllocatorManager;
 
 
 public class GameManager : MonoBehaviour
@@ -14,16 +11,14 @@ public class GameManager : MonoBehaviour
     public CardController mainCardController;
     public SpriteRenderer cardSpriteRenderer;
     public ResourceManager resourceManager;
-    //Tweaking variables
+    //Tweaking variables (speeds are per frame at 60 fps; scaled by frame time below)
     public float fRotationSpeed;
     public float fMovingSpeed;
     public float fSideMargin;
     public float fSideTrigger;
     public float divideValue;
-    float alphaText;
     public Color textColor;
     public float fRotationCoefficient;
-    Vector3 pos;
     //UI
     public TMP_Text characterDialogue;
     public TMP_Text actionQuote;
@@ -38,19 +33,53 @@ public class GameManager : MonoBehaviour
     public Vector3 cardRotation; //default
     public Vector3 currentRotation; //current rotation of card
     public Vector3 initRotation; //initial rotation of the card
+    //Dragging the card
+    private bool isDragging = false;
+    private float pressX;
+    private readonly Vector2 restPosition = new Vector2(0, 1);
     //Days Counter
     public int cardSwipeCount = 0;
     public int daysSurvived = 0;
     public TMP_Text daysSurvivedText;
-    private int lastScreenWidth;
-    private int lastScreenHeight;
     //Audio
     public AudioSource audioSource;
     public AudioClip flip;
 
+    //The tweak values above were tuned per frame at this frame rate
+    const float ReferenceFrameRate = 60f;
+
+    /// <summary>
+    /// Story cards that lead straight into a follow-up card, as indexes into
+    /// resourceManager.cards. Cards whose two answers are the same
+    /// (for example "Fight" / "Fight") continue whichever way you swipe.
+    /// </summary>
+    static readonly Dictionary<int, int> leftStoryNext = new Dictionary<int, int>
+    {
+        { 13, 14 }, //elderly man's bunker rumour -> zombie bunker
+        { 14, 15 }, //zombie bunker -> bunker loot
+        { 18, 19 }, //storm drain -> cannibal
+        { 21, 22 }, //bitemark -> bitemark beg
+        { 22, 23 }, //bitemark beg -> clementine joins
+        { 26, 27 }, //Birden steal -> search
+        { 27, 28 }, //Birden search -> child
+        { 28, 29 }, //Birden child -> zombie horde
+        { 29, 30 }, //Birden zombie horde -> save child
+        { 31, 32 }, //alina -> supplies
+    };
+
+    static readonly Dictionary<int, int> rightStoryNext = new Dictionary<int, int>
+    {
+        { 14, 15 }, //zombie bunker -> bunker loot
+        { 29, 30 }, //Birden zombie horde -> save child
+    };
+
+    //Wandering trader (6) leads to one of these at random
+    static readonly int[] traderOutcomes = { 11, 25 };
+    //Never dealt at random: death (0) and the tutorial (24)
+    static readonly int[] neverDealt = { 0, 24 };
+
     void Start()
     {
-        UpdateResponsiveLayout();
         resourceManager.ResetAllCards();
         resourceManager.food = 50;
         resourceManager.water = 50;
@@ -58,6 +87,7 @@ public class GameManager : MonoBehaviour
         resourceManager.morale = 50;
         resourceManager.medicine = 50;
         resourceManager.UpdateUI();
+        UpdateDaysSurvivedUI();
         LoadCard(testCard);
     }
 
@@ -76,258 +106,152 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        if (Screen.width != lastScreenWidth || Screen.height != lastScreenHeight)
-        {
-            UpdateResponsiveLayout();
-        }
+        float cardX = cardGameObject.transform.position.x;
+
+        //On narrow screens (phones held upright) the swipe distances shrink with
+        //the view, so a swipe never needs the card dragged off the screen
+        float viewHalfWidth = Camera.main.orthographicSize * Camera.main.aspect;
+        float swipeScale = Mathf.Min(1f, viewHalfWidth * 0.45f / fSideTrigger);
+        float sideTrigger = fSideTrigger * swipeScale;
+        float sideMargin = fSideMargin * swipeScale;
 
         //Dialogue text handling
-        textColor.a = Mathf.Min((Mathf.Abs(cardGameObject.transform.position.x) - fSideMargin) / divideValue, 1);
-        if (cardGameObject.transform.position.x > fSideTrigger)
-        {
-
-            if (Input.GetMouseButtonUp(0))
-            {
-                resourceManager.ApplyEffects(
-                    currentCard.rightFood,
-                    currentCard.rightWater,
-                    currentCard.rightAmmo,
-                    currentCard.rightMorale,
-                    currentCard.rightMedicine
-                );
-                currentCard.Right();
-
-                cardSwipeCount++;
-                if (cardSwipeCount % 5 == 0)
-                {
-                    daysSurvived++;
-                    UpdateDaysSurvivedUI();
-                }
-
-                audioSource.PlayOneShot(flip);
-
-                if (currentCard == resourceManager.cards[14])
-                {
-                    if (CheckDeath())
-                        return;
-                    LoadCard(resourceManager.cards[15]);
-                    return;
-                }
-                if (currentCard == resourceManager.cards[0])
-                {
-                    DeathSwipe();
-                    return;
-                }
-
-                else
-                {
-                    NewCard();
-                }
-            }
-        }
-        else if (cardGameObject.transform.position.x > fSideMargin)
-        {
-
-        }
-
-        else if (cardGameObject.transform.position.x > -fSideMargin)
+        textColor.a = Mathf.Min((Mathf.Abs(cardX) - sideMargin) / (divideValue * swipeScale), 1);
+        if (Mathf.Abs(cardX) <= sideMargin)
         {
             textColor.a = 0;
-
         }
-        else if (cardGameObject.transform.position.x > -fSideTrigger)
-        {
+        UpdateDialogue();
 
+        //Picking up the card (only when the press starts on the card itself)
+        Vector2 pointer = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+        if (Input.GetMouseButtonDown(0) && mainCardController.Contains(pointer))
+        {
+            isDragging = true;
+            isSubstituting = false;
+            pressX = pointer.x;
         }
-        else
-        {
 
-            if (Input.GetMouseButtonUp(0))
+        //Letting go of the card. Checking the button state rather than the
+        //release event also lets go if the release happened outside the window.
+        //A press near the edge with no real drag does not count as a swipe.
+        if (isDragging && !Input.GetMouseButton(0))
+        {
+            isDragging = false;
+            bool dragged = Mathf.Abs(pointer.x - pressX) > sideMargin;
+            if (dragged && cardX > sideTrigger)
             {
-                resourceManager.ApplyEffects(
-                    currentCard.leftFood,
-                    currentCard.leftWater,
-                    currentCard.leftAmmo,
-                    currentCard.leftMorale,
-                    currentCard.leftMedicine
-                );
-                currentCard.Left();
-
-                cardSwipeCount++;
-                if (cardSwipeCount % 5 == 0)
-                {
-                    daysSurvived++;
-                    UpdateDaysSurvivedUI();
-                }
-
-                audioSource.PlayOneShot(flip);
-
-                if (currentCard == resourceManager.cards[12])
-                {
-                    PlayerState.Instance.hasMetElderlyBunkerMan = true;
-                    NewCard();
-                    return;
-                }
-                if (currentCard == resourceManager.cards[16])
-                {
-                    PlayerState.Instance.hasMetMap = true;
-                    NewCard();
-                    return;
-                }
-                if (currentCard == resourceManager.cards[17])
-                {
-                    PlayerState.Instance.hasMetCorpse = true;
-                    NewCard();
-                    return;
-                }
-                if (currentCard == resourceManager.cards[4])
-                {
-                    PlayerState.Instance.hasMetBirden = true;
-                    NewCard();
-                    return;
-                }
-
-                if (currentCard == resourceManager.cards[13])
-                {
-                    if (CheckDeath())
-                        return;
-                    LoadCard(resourceManager.cards[14]);
-                    return;
-                }
-
-                if (currentCard == resourceManager.cards[14])
-                {
-                    if (CheckDeath())
-                        return;
-                    LoadCard(resourceManager.cards[15]);
-                    return;
-                }
-
-                if (currentCard == resourceManager.cards[18])
-                {
-                    if (CheckDeath())
-                        return;
-                    LoadCard(resourceManager.cards[19]);
-                    return;
-                }
-
-                //bitemark -> bitemark beg
-                if (currentCard == resourceManager.cards[21])
-                {
-                    if (CheckDeath())
-                        return;
-                    LoadCard(resourceManager.cards[22]);
-                    return;
-                }
-
-                //bitemark beg -> clementine joins
-                if (currentCard == resourceManager.cards[22])
-                {
-                    if (CheckDeath())
-                        return;
-                    LoadCard(resourceManager.cards[23]);
-                    return;
-                }
-
-                //Birden steal -> search
-                if (currentCard == resourceManager.cards[26])
-                {
-                    if (CheckDeath())
-                        return;
-                    LoadCard(resourceManager.cards[27]);
-                    return;
-                }
-
-                //Birden search -> Child
-                if (currentCard == resourceManager.cards[27])
-                {
-                    if (CheckDeath())
-                        return;
-                    LoadCard(resourceManager.cards[28]);
-                    return;
-                }
-
-                //birden child -> zombie horde
-                if (currentCard == resourceManager.cards[28])
-                {
-                    if (CheckDeath())
-                        return;
-                    LoadCard(resourceManager.cards[29]);
-                    return;
-                }
-
-                //birden zombie -> save child
-                if (currentCard == resourceManager.cards[29])
-                {
-                    if (CheckDeath())
-                        return;
-                    LoadCard(resourceManager.cards[30]);
-                    return;
-                }
-
-                //alina -> supplies
-                if (currentCard == resourceManager.cards[31])
-                {
-                    if (CheckDeath())
-                        return;
-                    LoadCard(resourceManager.cards[32]);
-                    return;
-                }
-
-                //wandering trader
-                if (currentCard == resourceManager.cards[6])
-                {
-                    if (CheckDeath())
-                        return;
-
-                    int roll = Random.Range(0, 2); // returns 0 or 1
-
-                    if (roll == 0)
-                        LoadCard(resourceManager.cards[11]);
-                    else
-                        LoadCard(resourceManager.cards[25]);
-
-                    return;
-                }
-
-                if (currentCard == resourceManager.cards[0])
-                {
-                    DeathSwipe();
-                    return;
-                }
-
-                else 
-                {
-                    NewCard();
-                }
+                Swipe(true);
+                return;
+            }
+            if (dragged && cardX < -sideTrigger)
+            {
+                Swipe(false);
+                return;
             }
         }
 
-                UpdateDialogue();
         //Movement
-        if (Input.GetMouseButton(0) && mainCardController.isMouseOver)
+        float frames = Mathf.Min(Time.deltaTime, 0.05f) * ReferenceFrameRate;
+        if (isDragging)
         {
-            Vector2 pos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-            cardGameObject.transform.position = pos;
+            cardGameObject.transform.position = pointer;
             cardGameObject.transform.eulerAngles = new Vector3(0, 0, cardGameObject.transform.position.x * fRotationCoefficient);
         }
         else if (!isSubstituting)
         {
-            cardGameObject.transform.position = Vector2.MoveTowards(cardGameObject.transform.position, new Vector2(0, 1), fMovingSpeed);
+            cardGameObject.transform.position = Vector2.MoveTowards(cardGameObject.transform.position, restPosition, fMovingSpeed * frames);
             cardGameObject.transform.eulerAngles = new Vector3(0, 0, 0);
         }
-        else if (isSubstituting)
+        else
         {
-            cardGameObject.transform.eulerAngles = Vector3.MoveTowards(cardGameObject.transform.eulerAngles, cardRotation, fRotationSpeed);
+            //Rotating the card. The angle is tracked here rather than read back from
+            //the transform, because Unity can report a 180 degree turn either way.
+            currentRotation = Vector3.MoveTowards(currentRotation, cardRotation, fRotationSpeed * frames);
+            cardGameObject.transform.position = restPosition;
+            cardGameObject.transform.eulerAngles = currentRotation;
+            if (currentRotation == cardRotation)
+            {
+                isSubstituting = false;
+            }
         }
-        //UI
-        //display.text = "" + textColor.a;
+    }
 
-        //Rotating the card
-        if (cardGameObject.transform.eulerAngles == cardRotation)
+    void Swipe(bool right)
+    {
+        audioSource.PlayOneShot(flip);
+
+        //The death card only ends the run: it is not a decision, so it must not
+        //apply effects or count towards the days survived
+        if (currentCard == resourceManager.cards[0])
         {
-            isSubstituting = false;
+            DeathSwipe();
+            return;
         }
+
+        if (right)
+        {
+            resourceManager.ApplyEffects(
+                currentCard.rightFood,
+                currentCard.rightWater,
+                currentCard.rightAmmo,
+                currentCard.rightMorale,
+                currentCard.rightMedicine
+            );
+            currentCard.Right();
+        }
+        else
+        {
+            resourceManager.ApplyEffects(
+                currentCard.leftFood,
+                currentCard.leftWater,
+                currentCard.leftAmmo,
+                currentCard.leftMorale,
+                currentCard.leftMedicine
+            );
+            currentCard.Left();
+        }
+
+        cardSwipeCount++;
+        if (cardSwipeCount % 5 == 0)
+        {
+            daysSurvived++;
+            UpdateDaysSurvivedUI();
+        }
+
+        int cardIndex = System.Array.IndexOf(resourceManager.cards, currentCard);
+
+        //Accepting these cards unlocks later story cards
+        if (!right)
+        {
+            if (cardIndex == 12)
+                PlayerState.Instance.hasMetElderlyBunkerMan = true;
+            if (cardIndex == 16)
+                PlayerState.Instance.hasMetMap = true;
+            if (cardIndex == 17)
+                PlayerState.Instance.hasMetCorpse = true;
+            if (cardIndex == 4)
+                PlayerState.Instance.hasMetBirden = true;
+        }
+
+        if (CheckDeath())
+            return;
+
+        //wandering trader: trading medicine is a gamble
+        if (!right && cardIndex == 6)
+        {
+            LoadCard(resourceManager.cards[traderOutcomes[Random.Range(0, traderOutcomes.Length)]]);
+            return;
+        }
+
+        Dictionary<int, int> storyNext = right ? rightStoryNext : leftStoryNext;
+        if (storyNext.TryGetValue(cardIndex, out int nextIndex))
+        {
+            LoadCard(resourceManager.cards[nextIndex]);
+            return;
+        }
+
+        NewCard();
     }
 
     public void LoadCard(Card card)
@@ -336,14 +260,18 @@ public class GameManager : MonoBehaviour
         leftQuote = card.leftQuote;
         rightQuote = card.rightQuote;
         currentCard = card;
+        if (card.appearsOnceOnly)
+        {
+            card.hasBeenShown = true;
+        }
         characterDialogue.text = card.dialogue;
         characterName.text = card.characterName;
         //Resetting the position of the card
-        cardGameObject.transform.position = new Vector2(0, 1);
-        cardGameObject.transform.eulerAngles = new Vector3(0, 0, 0);
+        isDragging = false;
+        cardGameObject.transform.position = restPosition;
         //Initialization of the substituion
         isSubstituting = true;
-
+        currentRotation = initRotation;
         cardGameObject.transform.eulerAngles = initRotation;
     }
 
@@ -367,13 +295,23 @@ public class GameManager : MonoBehaviour
         if (CheckDeath())
             return;
 
-        List<Card> validCards = new List<Card>();
+        //Follow-up story cards only appear through their story, never at random
+        HashSet<Card> excluded = new HashSet<Card>();
+        foreach (int index in neverDealt)
+            excluded.Add(resourceManager.cards[index]);
+        foreach (int index in traderOutcomes)
+            excluded.Add(resourceManager.cards[index]);
+        foreach (int index in leftStoryNext.Values)
+            excluded.Add(resourceManager.cards[index]);
+        foreach (int index in rightStoryNext.Values)
+            excluded.Add(resourceManager.cards[index]);
 
+        List<Card> validCards = new List<Card>();
 
         //conditionals
         foreach (Card card in resourceManager.cards)
         {
-            if (card == GameStats.prevCard || card == resourceManager.cards[0] || card == resourceManager.cards[14] || card == resourceManager.cards[15] || card == resourceManager.cards[19] || card == resourceManager.cards[11] || card == resourceManager.cards[24] || card == resourceManager.cards[25] || card == resourceManager.cards[27] || card == resourceManager.cards[28] || card == resourceManager.cards[29] || card == resourceManager.cards[30] || card == resourceManager.cards[32]) 
+            if (card == GameStats.prevCard || excluded.Contains(card))
                 continue;
 
             if (card.appearsOnceOnly && card.hasBeenShown)
@@ -391,20 +329,13 @@ public class GameManager : MonoBehaviour
             if (card.requiresBirden && !PlayerState.Instance.hasMetBirden)
                 continue;
 
-
             validCards.Add(card);
         }
 
         if (validCards.Count > 0)
         {
             Card next = validCards[Random.Range(0, validCards.Count)];
-
-            GameStats.prevCard = next; 
-
-            if (next.appearsOnceOnly)
-            {
-                next.hasBeenShown = true;
-            }
+            GameStats.prevCard = next;
             LoadCard(next);
         }
 
@@ -427,40 +358,6 @@ public class GameManager : MonoBehaviour
         {
             daysSurvivedText.text = "Days Survived : " + daysSurvived.ToString();
         }
-    }
-
-    /// <summary>
-    /// Keeps the world-space day counter inside the camera on every aspect ratio.
-    /// The rest of the HUD is handled by the Canvas Scaler, but this label is a
-    /// TextMeshPro object attached to the gameplay hierarchy rather than Canvas UI.
-    /// </summary>
-    void UpdateResponsiveLayout()
-    {
-        lastScreenWidth = Screen.width;
-        lastScreenHeight = Screen.height;
-
-        if (daysSurvivedText == null)
-            return;
-
-        Camera gameplayCamera = Camera.main;
-        if (gameplayCamera == null || !gameplayCamera.orthographic)
-            return;
-
-        RectTransform dayCounter = daysSurvivedText.rectTransform;
-        dayCounter.pivot = new Vector2(0f, 1f);
-
-        float distanceFromCamera = Mathf.Abs(
-            gameplayCamera.transform.position.z - dayCounter.position.z
-        );
-        Vector3 safeTopLeft = gameplayCamera.ViewportToWorldPoint(
-            new Vector3(0.025f, 0.95f, distanceFromCamera)
-        );
-
-        dayCounter.position = new Vector3(
-            safeTopLeft.x,
-            safeTopLeft.y,
-            dayCounter.position.z
-        );
     }
 
 
