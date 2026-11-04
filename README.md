@@ -2,15 +2,17 @@
 
 Swipe Survival is a choice-driven zombie survival game. Drag each card left or right to make a decision, then live with its effect on your food, water, ammunition, morale, and medicine. Keep every resource above zero and see how many days your group can survive.
 
+**[Play Swipe Survival in your browser on itch.io](https://privateducksheep.itch.io/swipesurvival)**. No download needed, and it works on desktop and phone browsers.
+
 ## Download and play
 
-Download the newest build from the **[Releases page](../../releases/latest)**. You do not need Unity to play.
+Play the web version on **[itch.io](https://privateducksheep.itch.io/swipesurvival)**, or download the newest build from the **[Releases page](../../releases/latest)**. You do not need Unity to play.
 
 | Device | Download | How to start | Status |
 | --- | --- | --- | --- |
 | Windows 10/11 (64-bit) | `SwipeSurvival-v1.0.2-Windows-x64.zip` | Extract the entire ZIP, then run `SwipeSurvival.exe`. Keep the `.exe`, `_Data` folder, and DLL files together. | Ready |
 | macOS (Intel or Apple Silicon) | `SwipeSurvival-v1.0.2-macOS-universal.zip` | Extract the ZIP, then open `Swipe Survival.app`. | Ready |
-| Web browser (desktop and phone) | — | Build the Web version (see below) and host the `Builds/Web` folder. | Not available yet |
+| Web browser (desktop and phone) | [Play on itch.io](https://privateducksheep.itch.io/swipesurvival) | Open the link and press **Run game**. Nothing to install. | Ready |
 | Linux | — | A Linux build must be exported from Unity first. | Not available yet |
 | Android | — | An APK or Play Store build must be exported and tested first. | Not available yet |
 | iPhone/iPad | — | An iOS build must be exported, signed with an Apple Developer account, and distributed through TestFlight or the App Store. | Not available yet |
