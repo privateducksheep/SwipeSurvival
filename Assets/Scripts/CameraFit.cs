@@ -21,7 +21,7 @@ public class CameraFit : MonoBehaviour
     [Tooltip("Panels on a Screen Space Overlay canvas in the top corners. The content box never sits underneath them.")]
     public RectTransform[] keepClearOf;
     [Tooltip("World-space box (centred horizontally on the camera) that must stay clear of those panels.")]
-    public Rect contentBox = new Rect(-3.3f, -3.7f, 6.6f, 9.7f);
+    public Rect contentBox = new Rect(-3.3f, -3.9f, 6.6f, 9.9f);
 
     private Camera fitCamera;
     private float designCentreY;

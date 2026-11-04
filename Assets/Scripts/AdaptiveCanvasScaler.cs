@@ -31,7 +31,7 @@ public class AdaptiveCanvasScaler : MonoBehaviour
 
 #if UNITY_WEBGL && !UNITY_EDITOR
     [DllImport("__Internal")]
-    private static extern float SwipeSurvival_CanvasPixelsPerCssPixel();
+    private static extern float SwipeSurvival_CanvasCssWidth();
 #endif
 
     void Awake()
@@ -80,7 +80,8 @@ public class AdaptiveCanvasScaler : MonoBehaviour
         if (pixelsPerPointOverride > 0f)
             return pixelsPerPointOverride;
 #if UNITY_WEBGL && !UNITY_EDITOR
-        return SwipeSurvival_CanvasPixelsPerCssPixel();
+        float cssWidth = SwipeSurvival_CanvasCssWidth();
+        return cssWidth > 0f ? Screen.width / cssWidth : 0f;
 #else
         if (Application.isMobilePlatform && Screen.dpi > 0f)
             return Screen.dpi / 160f;
