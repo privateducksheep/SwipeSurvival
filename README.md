@@ -86,6 +86,8 @@ Browsers keep the high score and volume for each upload, so players may start wi
 
 Add `-captureSizes 585x1266,1266x585 -capturePixelsPerPoint 1.5` to imitate a phone (here a 390 x 844 point iPhone), or `-logicCheck` to play through the swipe rules and write PASS/FAIL results to `logic-check.txt`.
 
+The same build records the gameplay trailer. Run it with `-trailerDir ~/Desktop/trailer` and it plays a scripted run at 1920 x 1080, saving every frame as a JPEG plus the game's sound as `audio.wav`. The game clock runs at exactly 30 fps while it records, so join the frames and audio with any video tool, for example `ffmpeg -framerate 30 -i frame_%05d.jpg -i audio.wav -c:v libx264 -pix_fmt yuv420p -c:a aac trailer.mp4`.
+
 ## Version
 
 Current build: `1.0.2`
